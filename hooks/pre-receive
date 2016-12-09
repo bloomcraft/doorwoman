@@ -3,4 +3,4 @@
 # pre-receive
 
 # remount rw
-/home/door/doorwoman/datamounter.sh -w
+# /home/door/doorwoman/datamounter.sh -w
