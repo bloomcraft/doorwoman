@@ -77,13 +77,11 @@ def load_json(filename):
 
 def setup_output_GPIOs():
     zone_by_pin[config[zone]["latch_gpio"]] = zone
-    init_GPIO(config[zone]["latch_gpio"])
-    init_GPIO(config[zone]["beep"])
-    init_GPIO(config[zone]["green"])
+    init_GPIO(config[zone])
 
-def init_GPIO(gpio):
-    GPIO.setup(gpio, GPIO.OUT)
-    lock(gpio)
+def init_GPIO(zone):
+    GPIO.setup(zone["latch_gpio"], GPIO.OUT)
+    lock(zone["latch_gpio"], zone["green"], zone["beep"])
 
 def lock(gpio, green_gpio, beep_gpio):
     GPIO.output(gpio, active(gpio)^1)
