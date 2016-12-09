@@ -20,8 +20,8 @@ def post_receive(from_commit, to_commit, branch_name):
     call('GIT_WORK_TREE="' + deploy_to_path + '" git checkout -f ' + branch_name, shell=True)
     print('DEPLOY: ' + branch_name + '(' + to_commit + ') copied to ' + deploy_to_path)
 
-    # TODO: Deployment Tasks
-    # i.e. Run a script, restart daemons, etc
+    # remount ro
+    call(deploy_to_path + datamounter.sh)
 
 
 if __name__ == '__main__':
