@@ -87,13 +87,13 @@ def init_GPIO(zone):
 
 def lock(gpio, green_gpio, beep_gpio):
     GPIO.output(gpio, active(gpio)^1)
-    GPIO.output(green_gpio, active(gpio)^1)
-    GPIO.output(beep_gpio, active(gpio)^1)
+    GPIO.output(green_gpio, active(gpio))
+    GPIO.output(beep_gpio, active(gpio))
 
 def unlock(gpio, green_gpio, beep_gpio):
     GPIO.output(gpio, active(gpio))
-    GPIO.output(green_gpio, active(gpio))
-    GPIO.output(beep_gpio, active(gpio))
+    GPIO.output(green_gpio, active(gpio)^1)
+    GPIO.output(beep_gpio, active(gpio)^1)
 
 def active(gpio):
     zone = zone_by_pin[gpio]
@@ -101,7 +101,7 @@ def active(gpio):
 
 def unlock_briefly(zone):
     unlock(zone["latch_gpio"], zone["green"], zone["beep"])
-    time.sleep(config[zone]["open_delay"])
+    time.sleep(zone["open_delay"])
     lock(zone["latch_gpio"], zone["green"], zone["beep"])
 
 def setup_readers():
