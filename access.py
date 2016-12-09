@@ -78,25 +78,31 @@ def load_json(filename):
 def setup_output_GPIOs():
     zone_by_pin[config[zone]["latch_gpio"]] = zone
     init_GPIO(config[zone]["latch_gpio"])
+    init_GPIO(config[zone]["beep"])
+    init_GPIO(config[zone]["green"])
 
 def init_GPIO(gpio):
     GPIO.setup(gpio, GPIO.OUT)
     lock(gpio)
 
-def lock(gpio):
+def lock(gpio, green_gpio, beep_gpio):
     GPIO.output(gpio, active(gpio)^1)
+    GPIO.output(green_gpio, active(gpio)^1)
+    GPIO.output(beep_gpio, active(gpio)^1)
 
-def unlock(gpio):
+def unlock(gpio, green_gpio, beep_gpio):
     GPIO.output(gpio, active(gpio))
+    GPIO.output(green_gpio, active(gpio))
+    GPIO.output(beep_gpio, active(gpio))
 
 def active(gpio):
     zone = zone_by_pin[gpio]
     return config[zone]["unlock_value"]
 
-def unlock_briefly(gpio):
-    unlock(gpio)
+def unlock_briefly(zone):
+    unlock(zone["latch_gpio"], zone["green"], zone["beep"])
     time.sleep(config[zone]["open_delay"])
-    lock(gpio)
+    lock(zone["latch_gpio"], zone["green"], zone["beep"])
 
 def setup_readers():
     global zone_by_pin
@@ -198,20 +204,20 @@ def open_door(user):
         repeat_read_count = 0
         repeat_read_timeout = now + 30
     last_name = name
-    if (repeat_read_count >= 2):
-        config[zone]["unlocked"] ^= True
-        if config[zone]["unlocked"]:
-            unlock(config[zone]["latch_gpio"])
-            report("%s unlocked by %s" % (zone, name))
-        else:
-            lock(config[zone]["latch_gpio"])
-            report("%s locked by %s" % (zone, name))
+    # if (repeat_read_count >= 2):
+    #     config[zone]["unlocked"] ^= True
+    #     if config[zone]["unlocked"]:
+    #         unlock(config[zone]["latch_gpio"])
+    #         report("%s unlocked by %s" % (zone, name))
+    #     else:
+    #         lock(config[zone]["latch_gpio"])
+    #         report("%s locked by %s" % (zone, name))
+    # else:
+    if config[zone]["unlocked"]:
+        report("%s found %s is already unlocked" % (name, zone))
     else:
-        if config[zone]["unlocked"]:
-            report("%s found %s is already unlocked" % (name, zone))
-        else:
-            unlock_briefly(config[zone]["latch_gpio"])
-            report("%s has entered %s" % (name, zone))
+        unlock_briefly(config[zone])
+        report("%s has entered %s" % (name, zone))
 
 def toggle_debug(a=None, b=None):
     global debug_mode
