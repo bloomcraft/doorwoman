@@ -1,0 +1,14 @@
+{
+	"<id>|<facility>,<user>|<user>": {
+		"name": "<name>",
+		"<zone>": "authorized"
+	},
+	"0254008A": {
+		"name": "John Doe",
+		"maindoor": "authorized"
+	},
+	"42,69": {
+		"name": "Jane Doe",
+		"maindoor": "authorized"
+	}
+}

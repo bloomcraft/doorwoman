@@ -1,0 +1,14 @@
+{
+	"emailfrom": "access@yourdomain.com",
+	"emailto": "you@yourdomain.com",
+	"#": "Leave emailserver blank and no emails will be sent",
+	"emailserver": "",
+	"emailport": 25,
+	"maindoor": {
+		"unlock_value": 1,
+		"open_delay": 0.1,
+		"latch_gpio": 18,
+		"d0": 23,
+		"d1": 25
+	}
+}
