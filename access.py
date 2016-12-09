@@ -81,6 +81,8 @@ def setup_output_GPIOs():
 
 def init_GPIO(zone):
     GPIO.setup(zone["latch_gpio"], GPIO.OUT)
+    GPIO.setup(zone["green"], GPIO.OUT)
+    GPIO.setup(zone["beep"], GPIO.OUT)
     lock(zone["latch_gpio"], zone["green"], zone["beep"])
 
 def lock(gpio, green_gpio, beep_gpio):
