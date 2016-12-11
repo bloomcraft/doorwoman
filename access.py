@@ -180,7 +180,7 @@ def lookup_card(card_id, facility, user_id):
         return reject_card()
     if (user.get(zone) and user[zone] == "authorized"):
         unlock_briefly(config[zone])
-        report("%s has entered %s" % (name, zone))
+        report("%s has entered %s" % (user["name"], zone))
     else:
         debug("user isn't authorized for this zone")
         reject_card()
