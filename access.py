@@ -179,7 +179,8 @@ def lookup_card(card_id, facility, user_id):
         debug("couldn't find user")
         return reject_card()
     if (user.get(zone) and user[zone] == "authorized"):
-        open_door(user)
+        unlock_briefly(config[zone])
+        report("%s has entered %s" % (name, zone))
     else:
         debug("user isn't authorized for this zone")
         reject_card()
@@ -187,35 +188,6 @@ def lookup_card(card_id, facility, user_id):
 def reject_card():
     report("A card was presented at %s and access was denied" % zone)
     return False
-
-def public_name(user):
-    first, last = user["name"].split(" ")
-    return "%s %s." % (first, last[0])
-
-def open_door(user):
-    global open_hours, last_name, repeat_read_timeout, repeat_read_count
-    now = time.time()
-    name = public_name(user)
-    if (name == last_name and now <= repeat_read_timeout):
-        repeat_read_count += 1
-    else:
-        repeat_read_count = 0
-        repeat_read_timeout = now + 30
-    last_name = name
-    # if (repeat_read_count >= 2):
-    #     config[zone]["unlocked"] ^= True
-    #     if config[zone]["unlocked"]:
-    #         unlock(config[zone]["latch_gpio"])
-    #         report("%s unlocked by %s" % (zone, name))
-    #     else:
-    #         lock(config[zone]["latch_gpio"])
-    #         report("%s locked by %s" % (zone, name))
-    # else:
-    if config[zone]["unlocked"]:
-        report("%s found %s is already unlocked" % (name, zone))
-    else:
-        unlock_briefly(config[zone])
-        report("%s has entered %s" % (name, zone))
 
 def cleanup(a=None, b=None):
     message = ""
