@@ -20,11 +20,10 @@ def initialize():
     sys.excepthook = log_uncaught_exceptions
     GPIO.setmode(GPIO.BCM)
     syslog.openlog("accesscontrol", syslog.LOG_PID, syslog.LOG_AUTH)
-    report("Initializing")
+    debug("Initializing")
     read_configs()
     setup_output_GPIOs()
     setup_readers()
-    # Catch exit signals and HUP to reload users
     atexit.register(cleanup)
     signal.signal(signal.SIGHUP, rehash)    # killall -HUP python
     report("%s access control is online" % zone)
@@ -179,24 +178,23 @@ def lookup_card(card_id, facility, user_id):
             users.get(card_id.upper()) or
             users.get(user_id))
     if (user is None):
-        debug("couldn't find user")
-        return reject_card()
+        return reject_card(card_id, facility, user_id, "couldn't find user")
     if (user.get(zone) and user[zone] == "authorized"):
         unlock_briefly(config[zone])
         report("%s has entered %s" % (user["name"], zone))
     else:
-        report("Declined access to %s facility=%i user=%i" %
-              (card_id, facility, user_id))
-        debug("user isn't authorized for this zone")
-        reject_card()
+        reject_card(card_id, facility, user_id, "user isn't authorized for this zone")
 
-def reject_card():
-    report("A card was presented at %s and access was denied" % zone)
+def reject_card(card_id, facility, user_id, reason):
+    report("%s declined: (card_id=%s, facilty=%i, user=%i): %s" %
+          (zone, card_id, facility, user_id, reason))
     return False
 
 def log_uncaught_exceptions(ex_cls, ex, tb):
+    if ex_cls == KeyboardInterrupt:
+        return
     report('Uncaught Exception {0}: {1}'.format(ex_cls, ex),
-          ''.join(traceback.format_tb(tb)))
+           ''.join(traceback.format_tb(tb)))
     sys.__excepthook__(ex_cls, ex, tb)
     cleanup()
 
