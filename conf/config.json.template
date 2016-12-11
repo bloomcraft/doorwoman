@@ -6,9 +6,11 @@
 	"emailport": 25,
 	"maindoor": {
 		"unlock_value": 1,
-		"open_delay": 0.1,
-		"latch_gpio": 18,
-		"d0": 23,
-		"d1": 25
+		"open_delay": 3,
+		"latch_gpio": 25,
+		"d0": 17,
+		"d1": 27,
+		"beep": 24,
+		"green": 23
 	}
 }
