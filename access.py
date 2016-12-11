@@ -11,11 +11,13 @@ import smtplib
 import threading
 import syslog
 import atexit
+import traceback
 
 debug_mode = False
 conf_dir = "./conf/"
 
 def initialize():
+    sys.excepthook = log_uncaught_exceptions
     GPIO.setmode(GPIO.BCM)
     syslog.openlog("accesscontrol", syslog.LOG_PID, syslog.LOG_AUTH)
     report("Initializing")
@@ -24,16 +26,17 @@ def initialize():
     setup_readers()
     # Catch exit signals and HUP to reload users
     atexit.register(cleanup)
-    signal.signal(signal.SIGINT, cleanup)   # Ctrl-C
-    signal.signal(signal.SIGTERM, cleanup)  # killall python
     signal.signal(signal.SIGHUP, rehash)    # killall -HUP python
     report("%s access control is online" % zone)
 
-def report(subject):
+def report(subject, more=""):
     syslog.syslog(subject)
+    if more:
+        syslog.syslog(more)
     debug(subject)
     if config and config.get("emailserver"):
         # The trailing comma in args=() below is required to truncate args
+        # TODO send body
         t = threading.Thread(target=send_email, args=(subject,))
         t.start()
 
@@ -191,7 +194,13 @@ def reject_card():
     report("A card was presented at %s and access was denied" % zone)
     return False
 
-def cleanup(a=None, b=None):
+def log_uncaught_exceptions(ex_cls, ex, tb):
+    report('Uncaught Exception {0}: {1}'.format(ex_cls, ex),
+          ''.join(traceback.format_tb(tb)))
+    sys.__excepthook__(ex_cls, ex, tb)
+    cleanup()
+
+def cleanup():
     message = ""
     if zone:
         message = "%s " % zone
@@ -199,7 +208,6 @@ def cleanup(a=None, b=None):
     report(message)
     GPIO.setwarnings(False)
     GPIO.cleanup()
-    sys.exit(0)
 
 # Globalize some variables for later
 zone = None
