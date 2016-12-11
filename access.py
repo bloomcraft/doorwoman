@@ -10,6 +10,7 @@ import json
 import smtplib
 import threading
 import syslog
+import atexit
 
 debug_mode = False
 conf_dir = "./conf/"
@@ -21,14 +22,11 @@ def initialize():
     read_configs()
     setup_output_GPIOs()
     setup_readers()
-    # Catch some exit signals
+    # Catch exit signals and HUP to reload users
+    atexit.register(cleanup)
     signal.signal(signal.SIGINT, cleanup)   # Ctrl-C
     signal.signal(signal.SIGTERM, cleanup)  # killall python
-    # These signals will reload users
     signal.signal(signal.SIGHUP, rehash)    # killall -HUP python
-    signal.signal(signal.SIGUSR2, rehash)   # killall -USR2 python
-    # This one will toggle debug messages
-    signal.signal(signal.SIGWINCH, toggle_debug)    # killall -WINCH python
     report("%s access control is online" % zone)
 
 def report(subject):
@@ -218,14 +216,6 @@ def open_door(user):
     else:
         unlock_briefly(config[zone])
         report("%s has entered %s" % (name, zone))
-
-def toggle_debug(a=None, b=None):
-    global debug_mode
-    if debug_mode:
-        debug("Disabling debug messages")
-    debug_mode ^= True
-    if debug_mode:
-        debug("Enabling debug messages")
 
 def cleanup(a=None, b=None):
     message = ""
