@@ -31,7 +31,7 @@ def initialize():
     signal.signal(signal.SIGINT, sigterm)   # Ctrl-C
     signal.signal(signal.SIGTERM, sigterm)  # killall python
     signal.signal(signal.SIGHUP, rehash)    # killall -HUP python
-    signal.signal(signal.SIGALRM, sigalrm)  # killall -ALRM python
+    signal.signal(signal.SIGUSR1, sigusr1)  # killall -USR1 python
     report("%s access control is online" % zone)
 
 def read_configs():
@@ -77,7 +77,7 @@ def rehash(signal, b):
 def sigterm(signal, b):
     sys.exit(0) # calls cleanup() via atexit
 
-def sigalrm(signal, b):
+def sigusr1(signal, b):
     report("Deus ex machina opened %s" % config[zone])
     unlock_briefly(config[zone])
 
