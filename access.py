@@ -186,7 +186,7 @@ def lookup_card(card_id, facility, user_id):
         reject_card(card_id, facility, user_id, "user isn't authorized for this zone")
 
 def reject_card(card_id, facility, user_id, reason):
-    report("%s declined: (card_id=%s, facilty=%i, user=%i): %s" %
+    report("%s declined: (card_id=%s, facilty=%s, user=%s): %s" %
           (zone, card_id, facility, user_id, reason))
     return False
 
