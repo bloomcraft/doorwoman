@@ -215,10 +215,7 @@ def cleanup():
 zone = None
 users = None
 config = None
-last_name = None
 zone_by_pin = {}
-repeat_read_count = 0
-repeat_read_timeout = time.time()
 
 initialize()
 while True:
