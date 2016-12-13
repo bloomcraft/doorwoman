@@ -68,7 +68,7 @@ def cleanup():
     GPIO.setwarnings(False)
     GPIO.cleanup()
 
-def rehash(signal=None, b=None):
+def rehash(signal, b):
     global users
     report("Reloading access list")
     users = load_json(conf_dir + "users.json")
