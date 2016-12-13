@@ -16,6 +16,9 @@ import traceback
 debug_mode = False
 conf_dir = "./conf/"
 
+#####
+# Setup
+#####
 def initialize():
     sys.excepthook = log_uncaught_exceptions
     GPIO.setmode(GPIO.BCM)
@@ -28,6 +31,60 @@ def initialize():
     signal.signal(signal.SIGTERM, sigterm)  # killall python
     signal.signal(signal.SIGHUP, rehash)    # killall -HUP python
     report("%s access control is online" % zone)
+
+def read_configs():
+    global zone, users, config
+    jzone = load_json(conf_dir + "zone.json")
+    users = load_json(conf_dir + "users.json")
+    config = load_json(conf_dir + "config.json")
+    zone = jzone["zone"]
+
+def load_json(filename):
+    file_handle = open(filename)
+    config = json.load(file_handle)
+    file_handle.close()
+    return config
+
+def setup_output_GPIOs():
+    zone_by_pin[config[zone]["latch_gpio"]] = zone
+    init_GPIO(config[zone])
+
+def init_GPIO(zone):
+    GPIO.setup(zone["latch_gpio"], GPIO.OUT)
+    GPIO.setup(zone["green"], GPIO.OUT)
+    GPIO.setup(zone["beep"], GPIO.OUT)
+    lock(zone["latch_gpio"], zone["green"], zone["beep"])
+
+#####
+# Signals/Teardown
+#####
+def cleanup():
+    message = ""
+    if zone:
+        message = "%s " % zone
+    message += "access control is going offline"
+    report(message)
+    GPIO.setwarnings(False)
+    GPIO.cleanup()
+
+def rehash(signal=None, b=None):
+    global users
+    report("Reloading access list")
+    users = load_json(conf_dir + "users.json")
+
+def sigterm(signal, b):
+    sys.exit(0) # calls cleanup() via atexit
+
+#####
+# Logging
+#####
+def log_uncaught_exceptions(ex_cls, ex, tb):
+    if ex_cls == KeyboardInterrupt:
+        return
+    report('Uncaught Exception {0}: {1}'.format(ex_cls, ex),
+           ''.join(traceback.format_tb(tb)))
+    sys.__excepthook__(ex_cls, ex, tb)
+    cleanup()
 
 def report(subject, more=""):
     syslog.syslog(subject)
@@ -58,37 +115,9 @@ def send_email(subject, body=""):
         # couldn't send.
         pass
 
-def rehash(signal=None, b=None):
-    global users
-    report("Reloading access list")
-    users = load_json(conf_dir + "users.json")
-
-def sigterm(signal, b):
-    sys.exit(0) # calls cleanup() via atexit
-
-def read_configs():
-    global zone, users, config
-    jzone = load_json(conf_dir + "zone.json")
-    users = load_json(conf_dir + "users.json")
-    config = load_json(conf_dir + "config.json")
-    zone = jzone["zone"]
-
-def load_json(filename):
-    file_handle = open(filename)
-    config = json.load(file_handle)
-    file_handle.close()
-    return config
-
-def setup_output_GPIOs():
-    zone_by_pin[config[zone]["latch_gpio"]] = zone
-    init_GPIO(config[zone])
-
-def init_GPIO(zone):
-    GPIO.setup(zone["latch_gpio"], GPIO.OUT)
-    GPIO.setup(zone["green"], GPIO.OUT)
-    GPIO.setup(zone["beep"], GPIO.OUT)
-    lock(zone["latch_gpio"], zone["green"], zone["beep"])
-
+#####
+# Door control
+#####
 def lock(gpio, green_gpio, beep_gpio):
     GPIO.output(gpio, active(gpio)^1)
     GPIO.output(green_gpio, active(gpio))
@@ -108,6 +137,9 @@ def unlock_briefly(zone):
     time.sleep(zone["open_delay"])
     lock(zone["latch_gpio"], zone["green"], zone["beep"])
 
+#####
+# Weigand Protocol
+#####
 def setup_readers():
     global zone_by_pin
     for name in iter(config):
@@ -176,6 +208,9 @@ def validate_bits(bstr):
           (card_id, facility, user_id))
     lookup_card(card_id, str(facility), str(user_id))
 
+#####
+# Users
+#####
 def lookup_card(card_id, facility, user_id):
     user = (users.get("%s,%s" % (facility, user_id)) or
             users.get(card_id) or
@@ -193,23 +228,6 @@ def reject_card(card_id, facility, user_id, reason):
     report("%s declined: (card_id=%s, facilty=%s, user=%s): %s" %
           (zone, card_id, facility, user_id, reason))
     return False
-
-def log_uncaught_exceptions(ex_cls, ex, tb):
-    if ex_cls == KeyboardInterrupt:
-        return
-    report('Uncaught Exception {0}: {1}'.format(ex_cls, ex),
-           ''.join(traceback.format_tb(tb)))
-    sys.__excepthook__(ex_cls, ex, tb)
-    cleanup()
-
-def cleanup():
-    message = ""
-    if zone:
-        message = "%s " % zone
-    message += "access control is going offline"
-    report(message)
-    GPIO.setwarnings(False)
-    GPIO.cleanup()
 
 # Globalize some variables for later
 zone = None
