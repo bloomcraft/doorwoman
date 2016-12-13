@@ -28,6 +28,7 @@ def initialize():
     setup_output_GPIOs()
     setup_readers()
     atexit.register(cleanup)
+    signal.signal(signal.SIGINT, sigterm)   # Ctrl-C
     signal.signal(signal.SIGTERM, sigterm)  # killall python
     signal.signal(signal.SIGHUP, rehash)    # killall -HUP python
     report("%s access control is online" % zone)
@@ -84,7 +85,6 @@ def log_uncaught_exceptions(ex_cls, ex, tb):
     report('Uncaught Exception {0}: {1}'.format(ex_cls, ex),
            ''.join(traceback.format_tb(tb)))
     sys.__excepthook__(ex_cls, ex, tb)
-    cleanup()
 
 def report(subject, more=""):
     syslog.syslog(subject)
