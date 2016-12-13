@@ -78,7 +78,7 @@ def sigterm(signal, b):
     sys.exit(0) # calls cleanup() via atexit
 
 def sigusr1(signal, b):
-    report("Deus ex machina opened %s" % config[zone])
+    report("Deus ex machina opened %s" % zone)
     unlock_briefly(config[zone])
 
 #####
