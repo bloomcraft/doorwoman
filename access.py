@@ -25,6 +25,7 @@ def initialize():
     setup_output_GPIOs()
     setup_readers()
     atexit.register(cleanup)
+    signal.signal(signal.SIGTERM, sigterm)  # killall python
     signal.signal(signal.SIGHUP, rehash)    # killall -HUP python
     report("%s access control is online" % zone)
 
@@ -61,6 +62,9 @@ def rehash(signal=None, b=None):
     global users
     report("Reloading access list")
     users = load_json(conf_dir + "users.json")
+
+def sigterm(signal, b):
+    sys.exit(0) # calls cleanup() via atexit
 
 def read_configs():
     global zone, users, config
