@@ -13,6 +13,7 @@ import syslog
 import atexit
 import traceback
 import logging
+from systemd.journal import JournalHandler
 import os
 from lockfile.pidlockfile import PIDLockFile
 from lockfile import AlreadyLocked
@@ -23,17 +24,14 @@ conf_dir = "./conf/"
 # Setup
 #####
 def initialize():
-    debug("Initializing")
     # PID lockfile
-    pidlock=PIDLockFile('doorwoman.pid', timeout=-1)
+    pidlock=PIDLockFile('/var/run/doorwoman/doorwoman.pid', timeout=-1)
     deal_with_locks(pidlock)
     # Logging
-    logger = logging.getLogger("DaemonLog")
+    global logger
+    logger = logging.getLogger("Doorwoman")
     logger.setLevel(logging.INFO)
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    handler = logging.FileHandler("/var/log/doorwoman.log")
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+    logger.addHandler(JournalHandler())
     # Config
     read_configs()
     GPIO.setmode(GPIO.BCM)
