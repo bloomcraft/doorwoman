@@ -24,7 +24,7 @@ conf_dir = "./conf/"
 # Setup
 #####
 def initialize():
-    # PID lockfile
+     PID lockfile
     pidlock=PIDLockFile('/var/run/doorwoman/doorwoman.pid', timeout=-1)
     deal_with_locks(pidlock)
     # Logging
