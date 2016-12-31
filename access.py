@@ -12,19 +12,29 @@ import threading
 import syslog
 import atexit
 import traceback
+import logging
+from systemd.journal import JournalHandler
+import os
+from lockfile.pidlockfile import PIDLockFile
+from lockfile import AlreadyLocked
 
-debug_mode = False
 conf_dir = "./conf/"
 
 #####
 # Setup
 #####
 def initialize():
-    sys.excepthook = log_uncaught_exceptions
-    GPIO.setmode(GPIO.BCM)
-    syslog.openlog("accesscontrol", syslog.LOG_PID, syslog.LOG_AUTH)
-    debug("Initializing")
+    # PID lockfile
+    pidlock=PIDLockFile('/var/run/doorwoman/doorwoman.pid', timeout=-1)
+    deal_with_locks(pidlock)
+    # Logging
+    global logger
+    logger = logging.getLogger("Doorwoman")
+    logger.setLevel(logging.INFO)
+    logger.addHandler(JournalHandler())
+    # Config
     read_configs()
+    GPIO.setmode(GPIO.BCM)
     setup_output_GPIOs()
     setup_readers()
     atexit.register(cleanup)
@@ -33,6 +43,19 @@ def initialize():
     signal.signal(signal.SIGHUP, rehash)    # killall -HUP python
     signal.signal(signal.SIGUSR1, sigusr1)  # killall -USR1 python
     report("%s access control is online" % zone)
+
+def deal_with_locks(pidlock):
+    try:
+        pidlock.acquire()
+    except AlreadyLocked:
+        try:
+            os.kill(pidlock.read_pid(), 0)
+            print('Process already running!')
+            exit(1)
+        except OSError:  #No process with locked PID
+            pidlock.break_lock()
+            pidlock.acquire()
+            print("breaking stale lock")
 
 def read_configs():
     global zone, users, config
@@ -84,18 +107,8 @@ def sigusr1(signal, b):
 #####
 # Logging
 #####
-def log_uncaught_exceptions(ex_cls, ex, tb):
-    if ex_cls == KeyboardInterrupt:
-        return
-    report('Uncaught Exception {0}: {1}'.format(ex_cls, ex),
-           ''.join(traceback.format_tb(tb)))
-    sys.__excepthook__(ex_cls, ex, tb)
-
-def report(subject, more=""):
-    syslog.syslog(subject)
-    if more:
-        syslog.syslog(more)
-    debug(subject)
+def report(subject):
+    logger.info(subject)
     if config and config.get("emailserver"):
         # The trailing comma in args=() below is required to truncate args
         # TODO send body
@@ -103,8 +116,7 @@ def report(subject, more=""):
         t.start()
 
 def debug(message):
-    if debug_mode:
-        print message
+    logger.debug(message)
 
 def send_email(subject, body=""):
     try:
@@ -238,9 +250,10 @@ def reject_card(card_id, facility, user_id, reason):
 zone = None
 users = None
 config = None
+logger = None
 zone_by_pin = {}
 
-initialize()
-while True:
-    # The main thread should open a command socket or something
-    time.sleep(1000)
+if __name__ == "__main__":
+    initialize()
+    while True:
+        time.sleep(1000)

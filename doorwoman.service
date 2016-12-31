@@ -1,0 +1,25 @@
+# /lib/systemd/system/doorwoman.service
+# permissions 644
+# sudo systemctl daemon-reload
+
+[Unit]
+Description=Doorwoman RFID unlocker service
+After=multi-user.target
+# OnFailure=
+
+[Service]
+Type=simple
+User=door
+Group=door
+WorkingDirectory=/home/door/doorwoman
+PIDFile=/var/run/doorwoman/doorwoman.pid
+PermissionsStartOnly=true
+ExecStartPre=-/bin/mkdir /var/run/doorwoman
+ExecStartPre=/bin/chown -R door:door /var/run/doorwoman
+ExecStart=/usr/bin/python /home/door/doorwoman/access.py
+ExecReload=/bin/kill -HUP $MAINPID
+RestartSec=2
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
