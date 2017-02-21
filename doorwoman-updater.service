@@ -1,0 +1,18 @@
+# /lib/systemd/system/doorwoman.service
+# permissions 644
+# sudo systemctl daemon-reload
+
+[Unit]
+Description=Doorwoman RFID unlocker ACL Updater
+After=multi-user.target
+# OnFailure=
+
+[Service]
+Type=simple
+User=door
+Group=door
+WorkingDirectory=/home/door/doorwoman
+ExecStart=/usr/bin/python /home/door/doorwoman/update.py
+
+[Install]
+WantedBy=multi-user.target

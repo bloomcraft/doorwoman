@@ -1,0 +1,10 @@
+[Unit]
+Description=Keeps Doorwoman's ACL up to date
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=10min
+Unit=doorwoman-updater.service
+
+[Install]
+WantedBy=multi-user.target
