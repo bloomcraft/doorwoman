@@ -1,6 +1,4 @@
 #!/usr/bin/python
-#
-# vim: et ai sw=4
 
 import RPi.GPIO as GPIO
 import sys,time
@@ -24,7 +22,7 @@ conf_dir = "./conf/"
 # Setup
 #####
 def initialize():
-     PID lockfile
+    # PID lockfile
     pidlock=PIDLockFile('/var/run/doorwoman/doorwoman.pid', timeout=-1)
     deal_with_locks(pidlock)
     # Logging
@@ -242,8 +240,7 @@ def lookup_card(card_id, facility, user_id):
         reject_card(card_id, facility, user_id, "user isn't authorized for this zone")
 
 def reject_card(card_id, facility, user_id, reason):
-    report("%s declined: (card_id=%s, facilty=%s, user=%s): %s" %
-          (zone, card_id, facility, user_id, reason))
+    report("%s declined: (%s,%s): %s" % (zone, facility, user_id, reason))
     return False
 
 # Globalize some variables for later
