@@ -60,5 +60,6 @@ if __name__ == "__main__":
         users_file.seek(0)
         users_file.truncate()
         json.dump(records_by_id, users_file, indent=4)
+        users_file.close()
         call("./datamounter.sh")
         call("sudo systemctl reload doorwoman".split())

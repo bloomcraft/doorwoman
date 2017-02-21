@@ -1,5 +1,5 @@
 [Unit]
-Description=Keeps Doorwoman's ACL up to date
+Description=Doorwoman RFID unlocker ACL Updater Timer
 
 [Timer]
 OnBootSec=10min

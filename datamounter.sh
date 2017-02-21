@@ -29,19 +29,19 @@ flock --exclusive 221 ||
 echo ${$}>&221
 
 if [[ "$MOUNT_WRITABLE" ]]; then
-  echo "$(basename ${0}): remounting rw"
   # TODO Increment lockfile for parallel write users
   if [ $(grep $MOUNT_POINT /proc/mounts |grep "\sro[\s,]" | wc -l) -gt 0 ]; then
+    echo "$(basename ${0}): remounting rw"
     sudo mount -o remount,rw $PARTITION $MOUNT_POINT
   else
-    echo "partition is already writable"
+      echo "$(basename ${0}): partition is already writable"
   fi
 else
-  echo "$(basename ${0}): remounting ro"
   # TODO Deincrement lockfile for parallel write users
   if [ $(grep $MOUNT_POINT /proc/mounts |grep "\srw[\s,]" | wc -l) -gt 0 ]; then
+    echo "$(basename ${0}): remounting ro"
     sudo mount -o remount,ro $PARTITION $MOUNT_POINT
   else
-    echo "partition is already read-only"
+    echo "$(basename ${0}): partition is already read-only"
   fi
 fi
