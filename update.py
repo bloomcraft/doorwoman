@@ -38,7 +38,7 @@ if __name__ == "__main__":
     logger.addHandler(JournalHandler())
     # logger.addHandler(logging.StreamHandler())
 
-    users_file = open('conf/users.json', 'r+w') # This file MUST exist
+    users_file = open('conf/users.json', 'r') # This file MUST exist
     users_json = users_file.read()
     users = json.loads(users_json)
 
@@ -56,10 +56,11 @@ if __name__ == "__main__":
         logger.warning("ERROR! Refusing to overwrite with zero users")
     else:
         logger.info("Updating conf/users.json: %i new records" % (len(records_by_id) - len(users)))
+        users_file.close()
         call('./datamounter.sh -w'.split())
-        users_file.seek(0)
-        users_file.truncate()
+        users_file.open('conf/users.json', 'r+')
         json.dump(records_by_id, users_file, indent=4)
+        users_file.truncate()
         users_file.close()
         call("./datamounter.sh")
         call("sudo systemctl reload doorwoman".split())
