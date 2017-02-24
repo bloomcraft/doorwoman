@@ -2,8 +2,8 @@
 Description=Doorwoman RFID unlocker ACL Updater Timer
 
 [Timer]
-OnBootSec=10min
-OnUnitActiveSec=10min
+OnBootSec=5min
+OnUnitActiveSec=60min
 Unit=doorwoman-updater.service
 
 [Install]
