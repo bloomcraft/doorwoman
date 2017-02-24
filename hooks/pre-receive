@@ -1,6 +1,0 @@
-#!/bin/sh
-
-# pre-receive
-
-# remount rw
-# /home/door/doorwoman/datamounter.sh -w
