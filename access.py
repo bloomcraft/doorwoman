@@ -1,15 +1,14 @@
 #!/usr/bin/python
+# pip install rpi.gpio lockfile python-systemd
 
 import RPi.GPIO as GPIO
 import sys,time
 import signal
 import subprocess
 import json
-import smtplib
 import threading
 import syslog
 import atexit
-import traceback
 import logging
 from systemd.journal import JournalHandler
 import os
@@ -36,11 +35,11 @@ def initialize():
     setup_output_GPIOs()
     setup_readers()
     atexit.register(cleanup)
-    signal.signal(signal.SIGINT, sigterm)   # Ctrl-C
-    signal.signal(signal.SIGTERM, sigterm)  # killall python
-    signal.signal(signal.SIGHUP, rehash)    # killall -HUP python
-    signal.signal(signal.SIGUSR1, sigusr1)  # killall -USR1 python
-    report("%s access control is online" % zone)
+    signal.signal(signal.SIGINT, sigterm)
+    signal.signal(signal.SIGTERM, sigterm)
+    signal.signal(signal.SIGHUP, rehash)
+    signal.signal(signal.SIGUSR1, sigusr1)
+    logger.info("%s access control is online" % zone)
 
 def deal_with_locks(pidlock):
     try:
@@ -48,12 +47,12 @@ def deal_with_locks(pidlock):
     except AlreadyLocked:
         try:
             os.kill(pidlock.read_pid(), 0)
-            print('Process already running!')
+            logger.warn('Process already running, goodbye!')
             exit(1)
         except OSError:  #No process with locked PID
             pidlock.break_lock()
             pidlock.acquire()
-            print("breaking stale lock")
+            logger.warn("Breaking stale lock")
 
 def read_configs():
     global zone, users, config
@@ -86,49 +85,21 @@ def cleanup():
     if zone:
         message = "%s " % zone
     message += "access control is going offline"
-    report(message)
+    logger.info(message)
     GPIO.setwarnings(False)
     GPIO.cleanup()
 
 def rehash(signal, b):
     global users
-    report("Reloading access list")
+    logger.info("Reloading access list")
     users = load_json(conf_dir + "users.json")
 
 def sigterm(signal, b):
     sys.exit(0) # calls cleanup() via atexit
 
 def sigusr1(signal, b):
-    report("Deus ex machina opened %s" % zone)
+    logger.info("Deus ex machina opened %s" % zone)
     unlock_briefly(config[zone])
-
-#####
-# Logging
-#####
-def report(subject):
-    logger.info(subject)
-    if config and config.get("emailserver"):
-        # The trailing comma in args=() below is required to truncate args
-        # TODO send body
-        t = threading.Thread(target=send_email, args=(subject,))
-        t.start()
-
-def debug(message):
-    logger.debug(message)
-
-def send_email(subject, body=""):
-    try:
-        emailfrom = config["emailfrom"]
-        to = config["emailto"]
-        smtpserver = smtplib.SMTP(config["emailserver"], config["emailport"])
-        smtpserver.ehlo()
-        header = "To: %s\nFrom: %s\nSubject: %s\n" % (to, emailfrom, subject)
-        msg = "%s\n%s\n\n" % (header, body)
-        smtpserver.sendmail(emailfrom, to, msg)
-        smtpserver.close()
-    except smtplib.SMTPException:
-        # couldn't send.
-        pass
 
 #####
 # Door control
@@ -200,14 +171,14 @@ def wiegand_stream_done(reader):
 
 def validate_bits(bstr):
     if len(bstr) != 26:
-        debug("Incorrect string length received: %i" % len(bstr))
-        debug(":%s:" % bstr)
+        logger.debug("Incorrect string length received: %i" % len(bstr))
+        logger.debug(":%s:" % bstr)
         return False
     lparity = int(bstr[0])
     facility = int(bstr[1:9], 2)
     user_id = int(bstr[9:25], 2)
     rparity = int(bstr[25])
-    debug("%s is: %i %i %i %i" % (bstr, lparity, facility, user_id, rparity))
+    logger.debug("%s is: %i %i %i %i" % (bstr, lparity, facility, user_id, rparity))
 
     calculated_lparity = 0
     calculated_rparity = 1
@@ -215,11 +186,11 @@ def validate_bits(bstr):
         calculated_lparity ^= int(bstr[iter+1])
         calculated_rparity ^= int(bstr[iter+13])
     if (calculated_lparity != lparity or calculated_rparity != rparity):
-        debug("Parity error in received string!")
+        logger.debug("Parity error in received string!")
         return False
 
     card_id = "%08x" % int(bstr, 2)
-    debug("Successfully decoded %s facility=%i user=%i" %
+    logger.debug("Successfully decoded %s facility=%i user=%i" %
           (card_id, facility, user_id))
     lookup_card(card_id, str(facility), str(user_id))
 
@@ -227,21 +198,17 @@ def validate_bits(bstr):
 # Users
 #####
 def lookup_card(card_id, facility, user_id):
-    user = (users.get("%s,%s" % (facility, user_id)) or
-            users.get(card_id) or
-            users.get(card_id.upper()) or
-            users.get(user_id))
+    user = (users.get("%s,%s" % (facility, user_id)))
     if (user is None):
-        return reject_card(card_id, facility, user_id, "couldn't find user")
+        reject_card(facility, user_id, "couldn't find user")
     if (user.get(zone) and user[zone] == "authorized"):
-        report("%s has entered %s" % (user["name"], zone))
+        logger.info("%s has entered %s" % (user["name"], zone))
         unlock_briefly(config[zone])
     else:
-        reject_card(card_id, facility, user_id, "user isn't authorized for this zone")
+        reject_card(facility, user_id, "user isn't authorized for this zone")
 
-def reject_card(card_id, facility, user_id, reason):
-    report("%s declined: (%s,%s): %s" % (zone, facility, user_id, reason))
-    return False
+def reject_card(facility, user_id, reason):
+    logger.warning("%s declined: (%s,%s): %s" % (zone, facility, user_id, reason))
 
 # Globalize some variables for later
 zone = None

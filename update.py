@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# pip install gspread oauth2client cryptography==1.4
 
 # With thanks for reassuring me google's permissions work the way I expect:
 # https://www.twilio.com/blog/2017/02/an-easy-way-to-read-and-write-to-a-google-spreadsheet-in-python.html
@@ -26,9 +27,9 @@ def find_duplicates(rows):
         id_dict.setdefault(row['ID'], []).append(row)
     duplicates = [x for n, x in enumerate(id_dict) if len(id_dict[x]) > 1]
     if duplicates:
-        logger.warn("Warning! - Duplicate ID fields found:")
+        logger.warning("Warning! - Duplicate ID fields found:")
         for dup in duplicates:
-            logger.warn(id_dict[dup])
+            logger.warning(id_dict[dup])
 
 if __name__ == "__main__":
     global logger
