@@ -21,11 +21,12 @@ def post_receive(from_commit, to_commit, branch_name):
     print('DEPLOY: ' + branch_name + '(' + to_commit + ') copied to ' + deploy_to_path)
 
     # verify it runs
-    call('sudo systemctl restart doorwoman.service'.split())
-    returncode = call('sudo systemctl is-active doorwoman.service'.split)
+    call('sudo systemctl restart doorwoman'.split())
+    returncode = call('sudo systemctl is-active doorwoman'.split)
     if returncode is not 0:
         print('DEPLOY: process not activated. Reverting.')
         call('GIT_WORK_TREE="' + deploy_to_path + '" git checkout ' + from_commit, shell=True)
+        call('sudo systemctl restart doorwoman'.split())
 
     # remount ro
     # call(deploy_to_path + 'datamounter.sh')
