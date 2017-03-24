@@ -201,7 +201,7 @@ def lookup_card(card_id, facility, user_id):
     user = (users.get("%s,%s" % (facility, user_id)))
     if (user is None):
         reject_card(facility, user_id, "couldn't find user")
-    if (user.get(zone) and user[zone] == "authorized"):
+    elif (user.get(zone) and user[zone] == "authorized"):
         logger.info("%s has entered %s" % (user["name"], zone))
         unlock_briefly(config[zone])
     else:

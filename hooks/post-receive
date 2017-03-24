@@ -22,7 +22,7 @@ def post_receive(from_commit, to_commit, branch_name):
 
     # verify it runs
     call('sudo systemctl restart doorwoman'.split())
-    returncode = call('sudo systemctl is-active doorwoman'.split)
+    returncode = call('sudo systemctl is-active doorwoman'.split())
     if returncode is not 0:
         print('DEPLOY: process not activated. Reverting.')
         call('GIT_WORK_TREE="' + deploy_to_path + '" git checkout ' + from_commit, shell=True)
