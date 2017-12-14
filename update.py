@@ -16,7 +16,9 @@ def get_records():
     creds = ServiceAccountCredentials.from_json_keyfile_name('client_secret.json', scope)
     client = gspread.authorize(creds)
     sheet = client.open("Keycards").sheet1
-    return sheet.get_all_records(default_blank=None)
+    records = sheet.get_all_records(default_blank=None)
+    # Avoid the plague of ID=NONE rows
+    return [r for r in records if r['ID']]
 
 def format_fobs_by_id(fobs):
     return {i['ID'] : {"name": i['Name'], "maindoor": "authorized"} for i in fobs if not i['Disable?']}
